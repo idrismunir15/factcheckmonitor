@@ -34,13 +34,13 @@ def claim_extractor(df):
     main_representation = KeyBERTInspired() #
 
     # Additional ways of representing a topic
-    aspect_model1 = PartOfSpeech("en_core_web_sm")
+    #aspect_model1 = PartOfSpeech("en_core_web_sm")
     aspect_model2 = [KeyBERTInspired(top_n_words=30), MaximalMarginalRelevance(diversity=.5)]
 
     # Add all models together to be run in a single `fit`nam
     representation_model = {
     "Main": main_representation,
-    "Aspect1":  aspect_model1,
+    #"Aspect1":  aspect_model1,
     "Aspect2":  aspect_model2 
     }
     
