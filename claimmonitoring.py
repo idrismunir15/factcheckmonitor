@@ -32,7 +32,7 @@ def load_data():
     
     return df
 
-@st.cache_data
+
 def claim_extractor(df):
 
     # The main representation of a topic
