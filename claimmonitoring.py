@@ -11,7 +11,7 @@ import plotly.express as px
 import pandas as pd
 
 st.set_page_config(layout="wide", page_title="Trend Monitoring System")
-st.header('FACTCHECK CLAIM MONITORING SYSTEM :sunglasses:',divider='rainbow', )
+st.header(':blue[FACTCHECK CLAIM MONITORING SYSTEM] :sunglasses:',divider='rainbow', )
 cont1=st.container()
 
 
@@ -22,13 +22,12 @@ import datetime
 pd.set_option('display.max_colwidth', None)
 
 @st.cache_data
-def load_data():
-    df=pd.read_csv("test.csv", parse_dates=['date'])
-    
-    #st.session_state.df=df
-    
+def load_data(df):
+    df=pd.read_csv(df, parse_dates=['date'])
     df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.date
     df.dropna(subset=['date'], inplace=True)
+    
+    df['User Input News']=df['User Input News'].str.replace('\n','').str.replace('\r','')
     
     return df
 
@@ -36,36 +35,41 @@ def load_data():
 def claim_extractor(df):
 
     # The main representation of a topic
-    main_representation = KeyBERTInspired() #
+    if 'file' not in st.session_state:
+        st.error("Please upload a file")
+        return
+    else:
+        
+        main_representation = KeyBERTInspired() #
 
-    # Additional ways of representing a topic
-    #aspect_model1 = PartOfSpeech("en_core_web_sm")
-    aspect_model2 = [KeyBERTInspired(top_n_words=30), MaximalMarginalRelevance(diversity=.5)]
+        # Additional ways of representing a topic
+        #aspect_model1 = PartOfSpeech("en_core_web_sm")
+        aspect_model2 = [KeyBERTInspired(top_n_words=30), MaximalMarginalRelevance(diversity=.5)]
 
-    # Add all models together to be run in a single `fit`nam
-    representation_model = {
-    "Main": main_representation,
-    #"Aspect1":  aspect_model1,
-    "Aspect2":  aspect_model2 
-    }
-    
-    docs=df['c'].tolist()
-    time_s=df['date'].tolist()
-    
-    topic_model = BERTopic(representation_model=representation_model).fit(docs)
-    
-    #Modeling over time
-    topics_overtime=topic_model.topics_over_time(docs, time_s)
-    
-    topics_overtime['representative_text']=topics_overtime['Topic'].map(topic_model.get_representative_docs())
-    
-    st.session_state.topics_overtime=topics_overtime
-    st.session_state.topic_model=topic_model
-    
-    st.session_state.fig=topic_model.visualize_topics_over_time(topics_over_time=topics_overtime,title="Topic Trends")#, top_n_topics=5, topics=topic_model.get_topics(), n_words=5)
-    #cont1.plotly_chart(st.session_state.fig,use_container_width=True)
-    
-    return 
+        # Add all models together to be run in a single `fit`nam
+        representation_model = {
+        "Main": main_representation,
+        #"Aspect1":  aspect_model1,
+        "Aspect2":  aspect_model2 
+        }
+        
+        docs=df['User Input News'].tolist()
+        time_s=df['date'].tolist()
+        
+        topic_model = BERTopic(representation_model=representation_model).fit(docs)
+        
+        #Modeling over time
+        topics_overtime=topic_model.topics_over_time(docs, time_s)
+        
+        topics_overtime['representative_text']=topics_overtime['Topic'].map(topic_model.get_representative_docs())
+        
+        st.session_state.topics_overtime=topics_overtime
+        st.session_state.topic_model=topic_model
+        
+        st.session_state.fig=topic_model.visualize_topics_over_time(topics_over_time=topics_overtime,title="Topic Trends")#, top_n_topics=5, topics=topic_model.get_topics(), n_words=5)
+        #cont1.plotly_chart(st.session_state.fig,use_container_width=True)
+        
+        return 
 
 
 def filter_by_topic(df, topic):
@@ -73,32 +77,34 @@ def filter_by_topic(df, topic):
 
 def generate_word_cloud(selected_topic, ww):
     text = ' '.join(ww.query('Topic == @selected_topic')['Words'].values)
-    wordcloud = WordCloud(width=1200, height=600, background_color='white').generate(text)
+    wordcloud = WordCloud(width=1000, height=400, background_color='white').generate(text)
     wordcloud.to_file("wordcloud.png")
     img = plt.imread("wordcloud.png")
-    fig = px.imshow(img, width=1200, height=600)
+    fig = px.imshow(img, width=1000, height=400)
     fig.update_xaxes(showticklabels=False).update_yaxes(showticklabels=False)
+    fig.update_layout(margin=dict(l=1, r=1, b=1, t=1))
     #st.session_state.fig2=fig
     return fig
     
 
 def main():
-    
-    
+    st.markdown("---")
+    st.sidebar.subheader(":blue[Date Range]")
     start_date = st.sidebar.date_input("Start Date", value=st.session_state.df['date'].min())
     end_date = st.sidebar.date_input("End Date", value=start_date + datetime.timedelta(days=30))
     
     st.session_state.df = st.session_state.df[(st.session_state.df['date'] >= start_date) & (st.session_state.df['date'] <= end_date)]
     
-    st.sidebar.button("Run Analysis", on_click=claim_extractor, args=(st.session_state.df,))
+    st.sidebar.button(":blue[Run Analysis]", on_click=claim_extractor, args=(st.session_state.df,))
     
-    st.markdown("---")
+    st.subheader(":blue[Topic Breakdown]",divider='rainbow')
     
     if 'topics_overtime' in st.session_state:
         ww = st.session_state.topics_overtime.query('Topic != -1')[['Topic', 'representative_text', 'Words']]
         
         col1, col2,col3 = st.columns([1, 2, 4],vertical_alignment='top',)
         col1.subheader("Topics")
+        col3.subheader("Word Cloud")
         
         www = ww.drop(columns=['Words'], axis=1)
         www = www.rename(columns={'representative_text': 'Representative Text'})
@@ -134,8 +140,12 @@ def main():
     
         
 if __name__=="__main__":
-    st.session_state.df = load_data()
-    main()
+    uploaded_file=st.sidebar.file_uploader(":red[**Upload a CSV file to start**]", type=["csv"], key="file",)
+    if uploaded_file is not None:
+        st.session_state.df = load_data(uploaded_file)
+        
+    #st.session_state.df = load_data()
+        main()
     
     
     
