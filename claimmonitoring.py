@@ -21,14 +21,18 @@ import datetime
 
 pd.set_option('display.max_colwidth', None)
 
+
+
+
 @st.cache_data
 def load_data(df):
-    df=pd.read_csv(df, parse_dates=['date'])
-    df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.date
+    df=pd.read_csv(df, parse_dates=['Created At'])
+    df['date'] = pd.to_datetime(df['Created At'], errors='coerce').dt.date
+    df.drop('Created At', axis=1, inplace=True)
     df.dropna(subset=['date'], inplace=True)
-    
     df['User Input News']=df['User Input News'].str.replace('\n','').str.replace('\r','')
-    
+    df.drop_duplicates(subset=['User Input News'], keep='first', inplace=True)
+    print(df.shape, df.head(5))
     return df
 
 
@@ -44,7 +48,7 @@ def claim_extractor(df):
 
         # Additional ways of representing a topic
         #aspect_model1 = PartOfSpeech("en_core_web_sm")
-        aspect_model2 = [KeyBERTInspired(top_n_words=30), MaximalMarginalRelevance(diversity=.5)]
+        aspect_model2 = [KeyBERTInspired(), MaximalMarginalRelevance(diversity=.5)]
 
         # Add all models together to be run in a single `fit`nam
         representation_model = {
@@ -100,9 +104,10 @@ def main():
     st.subheader(":blue[Topic Breakdown]",divider='rainbow')
     
     if 'topics_overtime' in st.session_state:
-        ww = st.session_state.topics_overtime.query('Topic != -1')[['Topic', 'representative_text', 'Words']]
+        ww = st.session_state.topics_overtime[['Topic', 'representative_text', 'Words']]
         
-        col1, col2,col3 = st.columns([1, 2, 4],vertical_alignment='top',)
+        col1, col2,col3 = st.columns([1, 2, 4],vertical_alignment='top',gap="large")
+        
         col1.subheader("Topics")
         col3.subheader("Word Cloud")
         
@@ -121,8 +126,26 @@ def main():
                 filtered_df = filter_by_topic(x.reset_index(), st.session_state.selected_topic)
                 col2.subheader("Representative Text")
                 temp = filtered_df['Representative Text'].values[0]
-                temp = "\n\n".join(temp)
-                col2.write(temp)
+                text_items=[{"summary":i[:300]+"  ...", "full_text":i}for i in temp]
+                
+                # Create an interactive "Read More" toggle for each item
+                for i, item in enumerate(text_items):
+                    #with st.container():
+                    # Unique key for each toggle
+                    toggle=''
+                    if len(item['summary'])>300:
+                    
+                        toggle = st.checkbox(f"Expand to Read More", key=f"toggle_{i}")
+                    
+                    if toggle:
+                        # Show full text if checkbox is selected
+                        st.write(f"""*{item["full_text"]}*""")
+                    else:
+                        # Show summary if checkbox is not selected
+                        st.write(f""":blue[**{item["summary"]}**]""")
+
+                    st.markdown("---")
+                
                 fig2 = generate_word_cloud(st.session_state.selected_topic, ww)
                 #col3 = st.container()
                 #col3.subheader(f"Word Cloud Topic {st.session_state.selected_topic}")
@@ -136,8 +159,7 @@ def main():
         
         cont1.plotly_chart(st.session_state.fig, use_container_width=True)
 
-    
-    
+
         
 if __name__=="__main__":
     uploaded_file=st.sidebar.file_uploader(":red[**Upload a CSV file to start**]", type=["csv"], key="file",)
