@@ -34,9 +34,19 @@ def load_data(df):
     print(df.shape, df.head(5))
     return df
 
+# Function to detect if the text is in English
+def is_english(text):
+    try:
+        # Detect the language of the text
+        lang = detect(text)
+        # Return True if the language is English
+        return lang == 'en'
+    except:
+        # If detection fails (e.g., for empty strings or purely numeric data), consider it non-English
+        return False
+
 
 def claim_extractor(df):
-
     # The main representation of a topic
     if 'file' not in st.session_state:
         st.error("Please upload a file")
@@ -55,7 +65,10 @@ def claim_extractor(df):
         #"Aspect1":  aspect_model1,
         "Aspect2":  aspect_model2 
         }
-        
+
+        # Apply the function to filter out rows with non-English text
+        df = df[df['User Input News'].apply(is_english)]
+
         docs=df['User Input News'].tolist()
         time_s=df['date'].tolist()
         
