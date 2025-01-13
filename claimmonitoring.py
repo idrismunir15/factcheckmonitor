@@ -6,6 +6,8 @@ from bertopic import BERTopic
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 import plotly.express as px
+from langdetect import detect
+
 
 
 import pandas as pd
