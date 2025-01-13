@@ -28,7 +28,6 @@ pd.set_option('display.max_colwidth', None)
 def load_data(df):
     df=pd.read_csv(df, parse_dates=['Date'])
     df['date'] = pd.to_datetime(df['Date'], errors='coerce').dt.date
-    df.drop('Created At', axis=1, inplace=True)
     df.dropna(subset=['date'], inplace=True)
     df['User Input News']=df['User Input News'].str.replace('\n','').str.replace('\r','')
     df.drop_duplicates(subset=['User Input News'], keep='first', inplace=True)
