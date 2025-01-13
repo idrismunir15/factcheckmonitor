@@ -26,7 +26,7 @@ pd.set_option('display.max_colwidth', None)
 
 @st.cache_data
 def load_data(df):
-    df=pd.read_csv(df, parse_dates=['Date'])
+    df=pd.read_csv(df, parse_dates=['Date'],encoding='utf-8')
     df['date'] = pd.to_datetime(df['Date'], errors='coerce').dt.date
     df.dropna(subset=['date'], inplace=True)
     df['User Input News']=df['User Input News'].str.replace('\n','').str.replace('\r','')
