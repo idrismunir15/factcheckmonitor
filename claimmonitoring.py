@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 import plotly.express as px
 from langdetect import detect
+import random
+import datetime
 
 
 
@@ -17,14 +19,8 @@ st.header(':blue[FACTCHECK CLAIM MONITORING SYSTEM] :sunglasses:',divider='rainb
 cont1=st.container()
 
 
-#add date column using random dates between 2023 and 2024
-import random
-import datetime
 
 pd.set_option('display.max_colwidth', None)
-
-
-
 
 @st.cache_data
 def load_data(df):
@@ -33,7 +29,7 @@ def load_data(df):
     df.dropna(subset=['date'], inplace=True)
     df['User Input News']=df['User Input News'].str.replace('\n','').str.replace('\r','')
     df.drop_duplicates(subset=['User Input News'], keep='first', inplace=True)
-    print(df.shape, df.head(5))
+    #print(df.shape, df.head(5))
     return df
 
 # Function to detect if the text is in English
