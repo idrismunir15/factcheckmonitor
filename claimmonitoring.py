@@ -139,7 +139,8 @@ def main():
                 filtered_df = filter_by_topic(x.reset_index(), st.session_state.selected_topic)
                 col2.subheader("Representative Text")
                 temp = filtered_df['Representative Text'].values[0]
-                text_items=[{"summary":i[:300]+"  ...", "full_text":i}for i in temp]
+                
+                text_items = [{"summary": i[:300] + "...", "full_text": i} if len(i) > 300  else {"summary": i[:300], "full_text": i}  for i in temp]
                 
                 # Create an interactive "Read More" toggle for each item
                 for i, item in enumerate(text_items):
@@ -147,9 +148,7 @@ def main():
                     # Unique key for each toggle
                     toggle=''
                     if len(item['summary'])>300:
-                    
                         toggle = st.checkbox(f"Expand to Read More", key=f"toggle_{i}")
-                    
                     if toggle:
                         # Show full text if checkbox is selected
                         st.write(f"""*{item["full_text"]}*""")
