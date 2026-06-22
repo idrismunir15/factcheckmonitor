@@ -1,0 +1,8 @@
+{
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "streamlit run claimmonitoring.py --server.port $PORT --server.address 0.0.0.0"
+  }
+}
